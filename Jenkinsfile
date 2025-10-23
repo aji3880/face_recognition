@@ -75,6 +75,7 @@ pipeline {
                   --set image.repository=${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME} \
                   --set image.tag=${IMAGE_TAG} \
                   -n ${NAMESPACE} --create-namespace
+                helm upgrade --install face-recognition ./helm-chart -n face-recognition --create-namespace
                 '''
             }
         }
