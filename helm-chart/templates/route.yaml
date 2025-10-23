@@ -7,6 +7,6 @@ spec:
     kind: Service
     name: {{ include "face-recognition.fullname" . }}
   port:
-    targetPort: {{ .Values.service.port }}
+    targetPort: 8080
   tls:
     termination: edge
