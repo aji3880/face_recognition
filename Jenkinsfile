@@ -36,7 +36,7 @@ pipeline {
         stage('install docker') {
             steps {
                 sh '''
-                echo "📦 Installing docker-compose..."
+                echo "Installing docker-compose..."
                 curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                 chmod +x /usr/local/bin/docker-compose
                 docker-compose version
@@ -47,7 +47,7 @@ pipeline {
         stage('build docker') {
             steps {
                 sh '''
-                echo "🏗️ Building image using docker-compose..."
+                echo "Building image using docker-compose..."
                 docker-compose -f ${COMPOSE_FILE} build
                 '''
             }
