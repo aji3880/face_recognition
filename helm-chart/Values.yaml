@@ -1,0 +1,10 @@
+image:
+  repository: image-registry.openshift-image-registry.svc:5000/face-namespace/face-recognition
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+service:
+  port: 8080
+route:
+  enabled: true
