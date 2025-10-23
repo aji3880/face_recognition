@@ -36,7 +36,7 @@ pipeline {
         stage('install docker') {
             steps {
                 sh '''
-                cho "Installing docker-compose (local)..."
+                echo "Installing docker-compose locally..."
                 mkdir -p ./bin
                 curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o ./bin/docker-compose
                 chmod +x ./bin/docker-compose
@@ -45,47 +45,44 @@ pipeline {
             }
         }
 
-        stage('build docker') {
+        stage('build images') {
             steps {
                 sh '''
                 echo "Building image using docker-compose..."
-                docker-compose -f ${COMPOSE_FILE} build
+                ./bin/docker-compose -f ${COMPOSE_FILE} build
                 '''
             }
         }
 
-
-        stage('test') {
+        stage('test docker image') {
             steps {
                 sh '''
                 echo "Running container locally for test..."
-                docker-compose -f ${COMPOSE_FILE} up -d
+                ./bin/docker-compose -f ${COMPOSE_FILE} up -d
                 sleep 5
                 docker ps
-                docker-compose -f ${COMPOSE_FILE} logs --tail=10
-                docker-compose -f ${COMPOSE_FILE} down
+                ./bin/docker-compose -f ${COMPOSE_FILE} logs --tail=10
+                ./bin/docker-compose -f ${COMPOSE_FILE} down
                 '''
             }
         }
 
         stage('push') {
             steps {
-                script {
-                    sh '''
-                    echo "Tagging image for OpenShift internal registry..."
-                    docker tag ${APP_NAME}:latest ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
+                sh '''
+                echo "Tagging image for OpenShift internal registry..."
+                docker tag ${APP_NAME}:latest ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
 
-                    echo "Logging in to OpenShift image registry..."
-                    oc whoami -t | docker login -u kubeadmin --password-stdin ${IMAGE_REGISTRY}
+                echo "Logging in to OpenShift image registry..."
+                docker login -u kubeadmin -p $(oc whoami -t) --insecure ${IMAGE_REGISTRY}
 
-                    echo "Pushing image to OpenShift internal registry..."
-                    docker push ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
-                    '''
-                }
+                echo "Pushing image to OpenShift internal registry..."
+                docker push ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
+                '''
             }
         }
 
-        stage('deploy') {
+        stage('deployt') {
             steps {
                 sh '''
                 echo "Deploying container to OpenShift..."
