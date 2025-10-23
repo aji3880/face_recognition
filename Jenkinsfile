@@ -34,25 +34,32 @@ pipeline {
             }
         }
 
-        stage('Install Docker Compose') {
+        stage('buildconfig') {
             steps {
-                sh '''
-                mkdir -p ./bin
-                curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o ./bin/docker-compose
-                chmod +x ./bin/docker-compose
-                ./bin/docker-compose version
-                '''
+                script {
+                    // Pilih Dockerfile berdasarkan parameter
+                    def dockerfile = params.USE_GPU ? 'Dockerfile.gpu' : 'Dockerfile'
+
+                    sh """
+                    echo "Checking if BuildConfig exists..."
+                    if ! oc get bc ${APP_NAME} -n ${NAMESPACE} >/dev/null 2>&1; then
+                        echo "Creating new BuildConfig (binary strategy)..."
+                        oc new-build --name=${APP_NAME} --binary --strategy=docker -n ${NAMESPACE}
+                    fi
+
+                    echo "Building image locally using Podman/Buildah..."
+                    podman build -f ${dockerfile} -t ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG} .
+
+                    echo "Logging in to OpenShift internal registry..."
+                    oc whoami -t | podman login -u kubeadmin --password-stdin ${IMAGE_REGISTRY}
+
+                    echo "Pushing image to OpenShift registry..."
+                    podman push ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
+                    """
+                }
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                sh '''
-                echo "Building image using docker-compose..."
-                sudo ${DOCKER_COMPOSE} -f ${COMPOSE_FILE} build
-                '''
-            }
-        }
 
         stage('Push to OpenShift Registry') {
             steps {
