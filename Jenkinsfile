@@ -17,7 +17,7 @@ pipeline {
             }
         }
 
-        stage('Login to OpenShift') {
+        stage('login') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'ocp-crd', usernameVariable: 'OCP_USER', passwordVariable: 'OCP_PASS')]) {
                     sh '''
@@ -33,16 +33,28 @@ pipeline {
             }
         }
 
-        stage('Build with Docker Compose') {
+        stage('install docker') {
             steps {
                 sh '''
-                echo "Building image using docker-compose..."
+                echo "📦 Installing docker-compose..."
+                curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                chmod +x /usr/local/bin/docker-compose
+                docker-compose version
+                '''
+            }
+        }
+
+        stage('build docker') {
+            steps {
+                sh '''
+                echo "🏗️ Building image using docker-compose..."
                 docker-compose -f ${COMPOSE_FILE} build
                 '''
             }
         }
 
-        stage('Test Run (Optional)') {
+
+        stage('test') {
             steps {
                 sh '''
                 echo "Running container locally for test..."
@@ -55,7 +67,7 @@ pipeline {
             }
         }
 
-        stage('Tag & Push Image to OpenShift Registry') {
+        stage('push') {
             steps {
                 script {
                     sh '''
@@ -72,7 +84,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to OpenShift') {
+        stage('deploy') {
             steps {
                 sh '''
                 echo "Deploying container to OpenShift..."
