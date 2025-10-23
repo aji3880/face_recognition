@@ -8,6 +8,7 @@ pipeline {
         IMAGE_REGISTRY = "image-registry.openshift-image-registry.svc:5000"
         IMAGE_TAG = "latest"
         COMPOSE_FILE = "docker-compose.yml"
+        DOCKER_COMPOSE = "./bin/docker-compose"
     }
 
     stages {
@@ -17,7 +18,7 @@ pipeline {
             }
         }
 
-        stage('login') {
+        stage('Login OpenShift') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'ocp-crd', usernameVariable: 'OCP_USER', passwordVariable: 'OCP_PASS')]) {
                     sh '''
@@ -33,10 +34,9 @@ pipeline {
             }
         }
 
-        stage('install docker') {
+        stage('Install Docker Compose') {
             steps {
                 sh '''
-                echo "Installing docker-compose locally..."
                 mkdir -p ./bin
                 curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o ./bin/docker-compose
                 chmod +x ./bin/docker-compose
@@ -45,48 +45,34 @@ pipeline {
             }
         }
 
-        stage('build images') {
+        stage('Build Docker Image') {
             steps {
                 sh '''
-                sudo ./bin/docker-compose -f ${COMPOSE_FILE} build
                 echo "Building image using docker-compose..."
-                ./bin/docker-compose -f ${COMPOSE_FILE} build
+                sudo ${DOCKER_COMPOSE} -f ${COMPOSE_FILE} build
                 '''
             }
         }
 
-        stage('test docker image') {
-            steps {
-                sh '''
-                echo "Running container locally for test..."
-                ./bin/docker-compose -f ${COMPOSE_FILE} up -d
-                sleep 5
-                docker ps
-                ./bin/docker-compose -f ${COMPOSE_FILE} logs --tail=10
-                ./bin/docker-compose -f ${COMPOSE_FILE} down
-                '''
-            }
-        }
-
-        stage('push') {
+        stage('Push to OpenShift Registry') {
             steps {
                 sh '''
                 echo "Tagging image for OpenShift internal registry..."
-                docker tag ${APP_NAME}:latest ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
+                sudo docker tag ${APP_NAME}:latest ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
 
-                echo "Logging in to OpenShift image registry..."
-                docker login -u kubeadmin -p $(oc whoami -t) --insecure ${IMAGE_REGISTRY}
+                echo "Logging in to OpenShift internal registry..."
+                oc whoami -t | sudo docker login -u kubeadmin --password-stdin ${IMAGE_REGISTRY}
 
-                echo "Pushing image to OpenShift internal registry..."
-                docker push ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
+                echo "Pushing image..."
+                sudo docker push ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
                 '''
             }
         }
 
-        stage('deployt') {
+        stage('Deploy to OpenShift') {
             steps {
                 sh '''
-                echo "Deploying container to OpenShift..."
+                echo "Deploying image to OpenShift..."
                 if oc get deployment ${APP_NAME} -n ${NAMESPACE} >/dev/null 2>&1; then
                     oc set image deployment/${APP_NAME} ${APP_NAME}=${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG} -n ${NAMESPACE}
                     oc rollout restart deployment/${APP_NAME} -n ${NAMESPACE}
@@ -100,7 +86,7 @@ pipeline {
 
     post {
         success {
-            echo "Successfully built and deployed via docker-compose"
+            echo "Successfully built and deployed using Docker Compose and OpenShift"
         }
         failure {
             echo "Build or deploy failed. Check Jenkins logs for details."
