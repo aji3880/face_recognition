@@ -4,7 +4,7 @@ metadata:
   name: {{ include "face-recognition.fullname" . }}
 spec:
   ports:
-    - port: {{ .Values.service.port }}
+    - port: 8080
       targetPort: {{ .Values.service.port }}
   selector:
     app: {{ include "face-recognition.name" . }}
