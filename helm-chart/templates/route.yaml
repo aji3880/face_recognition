@@ -1,15 +1,12 @@
-#{{- if .Values.route.enabled }}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ include "face-recognition.fullname" . }}
 spec:
   to:
     kind: Service
-      name: {{ .Release.Name }}
-#    name: {{ include "face-recognition.fullname" . }}
+    name: {{ include "face-recognition.fullname" . }}
   port:
     targetPort: {{ .Values.service.port }}
   tls:
     termination: edge
-#{{- end }}
