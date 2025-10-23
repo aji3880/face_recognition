@@ -48,6 +48,7 @@ pipeline {
         stage('build images') {
             steps {
                 sh '''
+                sudo ./bin/docker-compose -f ${COMPOSE_FILE} build
                 echo "Building image using docker-compose..."
                 ./bin/docker-compose -f ${COMPOSE_FILE} build
                 '''
