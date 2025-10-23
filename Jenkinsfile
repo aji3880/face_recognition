@@ -44,17 +44,8 @@ pipeline {
                     echo "Checking if BuildConfig exists..."
                     if ! oc get bc ${APP_NAME} -n ${NAMESPACE} >/dev/null 2>&1; then
                         echo "Creating new BuildConfig (binary strategy)..."
-                        oc new-build --name=${APP_NAME} --binary --strategy=docker -n ${NAMESPACE}
+                        oc new-build --name=${APP_NAME} --binary --strategy=docker-compose -n ${NAMESPACE}
                     fi
-
-                    echo "Building image locally using Podman/Buildah..."
-                    podman build -f ${dockerfile} -t ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG} .
-
-                    echo "Logging in to OpenShift internal registry..."
-                    oc whoami -t | podman login -u kubeadmin --password-stdin ${IMAGE_REGISTRY}
-
-                    echo "Pushing image to OpenShift registry..."
-                    podman push ${IMAGE_REGISTRY}/${NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
                     """
                 }
             }
