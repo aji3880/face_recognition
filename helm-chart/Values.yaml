@@ -6,5 +6,5 @@ image:
 replicaCount: 1
 service:
   port: 8080
-#route:
-#  enabled: true
+route:
+  enabled: true
