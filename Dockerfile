@@ -1,9 +1,8 @@
-# This is a sample Dockerfile you can modify to deploy your own app based on face_recognition
-
+# Gunakan base image Python
 FROM python:3.10.3-slim-bullseye
 
-RUN apt-get -y update
-RUN apt-get install -y --fix-missing \
+# Install dependencies sistem
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     gfortran \
@@ -24,29 +23,24 @@ RUN apt-get install -y --fix-missing \
     python3-numpy \
     software-properties-common \
     zip \
-    && apt-get clean && rm -rf /tmp/* /var/tmp/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN cd ~ && \
-    mkdir -p dlib && \
-    git clone -b 'v19.9' --single-branch https://github.com/davisking/dlib.git dlib/ && \
-    cd  dlib/ && \
+# Install dlib library
+RUN mkdir -p /opt/dlib && \
+    git clone -b 'v19.9' --single-branch https://github.com/davisking/dlib.git /opt/dlib && \
+    cd /opt/dlib && \
     python3 setup.py install --yes USE_AVX_INSTRUCTIONS
 
+# Salin source code aplikasi ke direktori yang bisa diakses non-root
+COPY . /opt/face_recognition
 
-# The rest of this file just runs an example script.
-
-# If you wanted to use this Dockerfile to run your own app instead, maybe you would do this:
-# COPY . /root/your_app_or_whatever
-# RUN cd /root/your_app_or_whatever && \
-#     pip3 install -r requirements.txt
-# RUN whatever_command_you_run_to_start_your_app
-
-COPY . /root/face_recognition
-RUN cd /root/face_recognition && \
-    pip3 install -r requirements.txt && \
+# Install Python requirements dan setup aplikasi
+RUN cd /opt/face_recognition && \
+    pip3 install --no-cache-dir -r requirements.txt && \
     python3 setup.py install
 
-# Add pip3 install opencv-python==4.1.2.30 if you want to run the live webcam examples
+# Set working directory untuk container
+WORKDIR /opt/face_recognition/examples
 
-CMD cd /root/face_recognition/examples && \
-    python3 recognize_faces_in_pictures.py
+# Jalankan aplikasi secara default
+CMD ["python3", "recognize_faces_in_pictures.py"]
