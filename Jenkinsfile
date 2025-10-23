@@ -36,10 +36,11 @@ pipeline {
         stage('install docker') {
             steps {
                 sh '''
-                echo "Installing docker-compose..."
-                curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                chmod +x /usr/local/bin/docker-compose
-                docker-compose version
+                cho "Installing docker-compose (local)..."
+                mkdir -p ./bin
+                curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o ./bin/docker-compose
+                chmod +x ./bin/docker-compose
+                ./bin/docker-compose version
                 '''
             }
         }
