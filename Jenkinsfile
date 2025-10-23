@@ -11,13 +11,13 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('cekot') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Login to OpenShift') {
+        stage('login') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'ocp-crd', usernameVariable: 'OCP_USER', passwordVariable: 'OCP_PASS')]) {
                     sh '''
@@ -32,7 +32,7 @@ pipeline {
             }
         }
 
-        stage('Create/OpenShift BuildConfig') {
+        stage('buildconfig') {
             steps {
                 sh '''
                 echo "Creating BuildConfig if not exists..."
@@ -43,7 +43,7 @@ pipeline {
             }
         }
 
-        stage('Build Image in OpenShift') {
+        stage('build image') {
             steps {
                 sh '''
                 echo "Starting OpenShift binary build..."
@@ -52,7 +52,7 @@ pipeline {
             }
         }
 
-        stage('Install Helm') {
+        stage('install fullface') {
             steps {
                 sh '''
                 echo "Installing Helm..."
@@ -66,7 +66,7 @@ pipeline {
             }
         }
 
-        stage('Deploy with Helm') {
+        stage('deploy') {
             steps {
                 sh '''
                 echo "Deploying with Helm..."
@@ -80,11 +80,11 @@ pipeline {
             }
         }
 
-        stage('Rollout Deployment') {
+        stage('rollout restart') {
             steps {
                 sh '''
-                echo "Restarting deployment to pick up new image..."
-                oc rollout restart deployment/${APP_NAME} -n ${NAMESPACE}
+                echo "Restarting deployment to pick up new image"
+                oc rollout restart deployment/${APP_NAME}-${APP_NAME} -n ${NAMESPACE}
                 '''
             }
         }
