@@ -1,4 +1,4 @@
-{{- if .Values.route.enabled }}
+#{{- if .Values.route.enabled }}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -11,4 +11,4 @@ spec:
     targetPort: {{ .Values.service.port }}
   tls:
     termination: edge
-{{- end }}
+#{{- end }}
